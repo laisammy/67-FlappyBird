@@ -1,9 +1,10 @@
 import pygame
+from pygame import mixer
 from pygame.locals import *
 import random
 
 pygame.init()
-
+mixer.init()
 screenWidth = 864
 screenHeight = 936
 
@@ -19,6 +20,23 @@ font_45 = pygame.font.Font("assets/PixelOperator8.ttf", 45)
 font_20 = pygame.font.Font("assets/PixelOperator8.ttf", 20)
 white = (255, 255, 255)
 black = (0, 0, 0)
+
+dieWAV = mixer.Sound("assets/die.wav")
+dieWAV.set_volume(0.5)
+diePlayed = False
+
+wingWAV = mixer.Sound("assets/wing.wav")
+wingWAV.set_volume(0.5)
+
+hitWAV = mixer.Sound("assets/hit.wav")
+hitWAV.set_volume(0.5)
+hitPlayed = False
+
+pointWAV = mixer.Sound("assets/point.wav")
+pointWAV.set_volume(0.5)
+
+swooshWAV = mixer.Sound("assets/swoosh.wav")
+swooshWAV.set_volume(0.5)
 
 # Game variables
 groundScroll = 0
@@ -165,6 +183,7 @@ while run:
             if birdGroup.sprites()[0].rect.left > pipeGroup.sprites()[0].rect.right: # Check if the bird has left the zone in between the two vertical pipes
                 passPipe = False
                 score += 1
+                pointWAV.play()
     
     drawText("Score: " + str(score), font_45, white, 10, 20, "topLeft") # Display score
 
@@ -173,6 +192,7 @@ while run:
 
     if pygame.sprite.groupcollide(birdGroup, pipeGroup, False, False) or flappy.rect.top < 0:
         gameOver = True
+    
 
     if flappy.rect.bottom >= 768: # Check if bird hits the ground
         gameOver = True
@@ -199,6 +219,10 @@ while run:
             groundScroll = 0
 
     if gameOver == True:
+        print(hitPlayed)
+        if hitPlayed == False:
+            hitPlayed = True
+            hitWAV.play()
         if restartButton.draw() == True:
             gameOver = False
             score = restartGame() # Reset game and score
@@ -212,10 +236,13 @@ while run:
                     gameStart = True
                     flappy.clicked = True
                     flappy.vel = -10
+                    wingWAV.play
+                    hitPlayed = False
                     print("Game Started")
                 else: # If game has already started, flap the bird
                     flappy.clicked = True 
                     flappy.vel = -10
+                    wingWAV.play()
                     print("Flap")
 
         if event.type == pygame.KEYUP:
