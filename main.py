@@ -1,5 +1,6 @@
 import pygame
 from pygame.locals import *
+import random
 
 pygame.init()
 
@@ -18,6 +19,10 @@ groundScroll = 0
 scrollSpeed = 4
 gameStart = False
 gameOver = False
+pipeGap = 200
+pipeFreq = 1500 #1500ms == 1.5s
+lastPipe = pygame.time.get_ticks() - pipeFreq
+
 
 clock = pygame.time.Clock()
 fps = 60
@@ -60,10 +65,29 @@ class Bird(pygame.sprite.Sprite):
         else:
             self.image = pygame.transform.rotate(self.images[self.index], -90) # Dead bird (Rotate bird to face down)
 
+class Pipe(pygame.sprite.Sprite):
+    def __init__(self, x, y, position):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load("assets/pipe.png")
+        self.rect = self.image.get_rect()
+        self.rect.topleft = [x, y]
+
+        if position == 1: # Top pipe
+            self.image = pygame.transform.flip(self.image, False, True)
+            self.rect.bottomleft = [x, y - int(pipeGap / 2)]
+        if position == -1: # Bottom pipe
+            self.rect.topleft = [x, y + int(pipeGap / 2)]
+    
+    def update(self):
+        self.rect.x -= scrollSpeed
+        if self.rect.right < 0:
+            self.kill()
+
 
 birdGroup = pygame.sprite.Group()
+pipeGroup = pygame.sprite.Group()
 
-flappy = Bird(100, int(screenHeight/2))
+flappy = Bird(100, int(screenHeight / 2))
 
 birdGroup.add(flappy)
 
@@ -75,8 +99,12 @@ while run:
 
     birdGroup.draw(screen)
     birdGroup.update()
+    pipeGroup.draw(screen)
 
     screen.blit(ground, (groundScroll, 768)) # Draw ground
+
+    if pygame.sprite.groupcollide(birdGroup, pipeGroup, False, False) or flappy.rect.top < 0:
+        gameOver = True
 
     if flappy.rect.bottom >= 768: # Check if bird hits the ground
         gameOver = True
@@ -85,7 +113,19 @@ while run:
         flappy.rect.bottom = 768
         print("Game Over")
 
-    if gameOver == False:
+    if gameOver == False and gameStart == True:
+        timeNow = pygame.time.get_ticks()
+        if timeNow - lastPipe > pipeFreq: # Generate pipes
+            pipeHeight = random.randint(-150, 150) # Generate height of pipe
+
+            bottomPipe = Pipe(screenWidth, int(screenHeight / 2) + pipeHeight, -1)
+            topPipe = Pipe(screenWidth, int(screenHeight / 2) + pipeHeight, 1)
+            pipeGroup.add(topPipe)
+            pipeGroup.add(bottomPipe)
+            lastPipe = timeNow
+        
+        pipeGroup.update()
+
         groundScroll -= scrollSpeed # Scroll ground
         if abs(groundScroll) > 35:
             groundScroll = 0
