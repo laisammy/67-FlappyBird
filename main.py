@@ -16,6 +16,8 @@ ground = pygame.image.load("assets/ground.png")
 # Game variables
 groundScroll = 0
 scrollSpeed = 4
+gameStart = False
+gameOver = False
 
 clock = pygame.time.Clock()
 fps = 60
@@ -32,17 +34,32 @@ class Bird(pygame.sprite.Sprite):
         self.image = self.images[self.index]
         self.rect = self.image.get_rect()
         self.rect.center = [x, y]
+        self.vel = 0
+        self.clicked = False
 
     def update(self):
-        self.counter += 1
-        flapCD = 5
+        if gameStart == True:
+            self.vel += 0.5 # Bird gravity
+            if self.vel > 8:
+                self.vel = 8 # Terminal velocity
+            if self.rect.bottom < 768:
+                self.rect.y +=(self.vel)
 
-        if self.counter > flapCD:
-            self.counter = 0
-            self.index += 1
-            if self.index >= len(self.images): 
-                self.index = 0
-        self.image = self.images[self.index]
+        if gameOver == False:
+            self.counter += 1 # Flap animation
+            flapCD = 5
+
+            if self.counter > flapCD:
+                self.counter = 0
+                self.index += 1
+                if self.index >= len(self.images): 
+                    self.index = 0
+            self.image = self.images[self.index]
+
+            self.image = pygame.transform.rotate(self.images[self.index], -self.vel * 3) # Rotate bird based on velocity
+        else:
+            self.image = pygame.transform.rotate(self.images[self.index], -90) # Dead bird (Rotate bird to face down)
+
 
 birdGroup = pygame.sprite.Group()
 
@@ -58,15 +75,40 @@ while run:
 
     birdGroup.draw(screen)
     birdGroup.update()
-    
-    screen.blit(ground, (groundScroll, 768)) # Draw and scroll ground
-    groundScroll -= scrollSpeed
-    if abs(groundScroll) > 35:
-        groundScroll = 0
+
+    screen.blit(ground, (groundScroll, 768)) # Draw ground
+
+    if flappy.rect.bottom >= 768: # Check if bird hits the ground
+        gameOver = True
+        gameStart = False
+        flappy.vel = 0
+        flappy.rect.bottom = 768
+        print("Game Over")
+
+    if gameOver == False:
+        groundScroll -= scrollSpeed # Scroll ground
+        if abs(groundScroll) > 35:
+            groundScroll = 0
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run = False
+        if event.type == pygame.KEYDOWN: # Check for spacebar press
+            if event.key == pygame.K_SPACE and gameOver == False:
+                if gameStart == False: # If game has not started, start the game
+                    gameStart = True
+                    flappy.clicked = True
+                    flappy.vel = -10
+                    print("Game Started")
+                else: # If game has already started, flap the bird
+                    flappy.clicked = True 
+                    flappy.vel = -10
+                    print("Flap")
+
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                flappy.clicked = False
+
         
     pygame.display.update()
 
