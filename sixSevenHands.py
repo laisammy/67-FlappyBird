@@ -39,7 +39,9 @@ def draw_landmarks(rgb, result):
     return annotated
 
 def sixSevenHands():
-    prev_y1, prev_y2 = None, None
+    prev_y1 = prev_y2 = None
+    smooth_y1 = smooth_y2 = None
+    movement_frames = 0
 
     base = python.BaseOptions(model_asset_path="assets/hand_landmarker.task")
 
@@ -100,12 +102,25 @@ def sixSevenHands():
         if left_wrist and right_wrist: # If both wrists are detected, check for movement
             (x1, y1) = left_wrist
             (x2, y2) = right_wrist
+            
+            if smooth_y1 is None:
+                smooth_y1, smooth_y2 = y1, y2
+
+            smooth_y1 = 0.7 * smooth_y1 + 0.3 * y1
+            smooth_y2 = 0.7 * smooth_y2 + 0.3 * y2
 
             if prev_y1 is not None and prev_y2 is not None:
-                dy1 = y1 - prev_y1
-                dy2 = y2 - prev_y2
+                dy1 = smooth_y1 - prev_y1
+                dy2 = smooth_y2 - prev_y2
 
-                if abs(dy1) > 40 or abs(dy2) > 40:
+                threshold = frame.shape[0] * 0.03   # 3% of screen height
+
+                if abs(dy1) > threshold or abs(dy2) > threshold:
+                    movement_frames += 1
+                else:
+                    movement_frames = 0
+                
+                if movement_frames >= 2:
                     print("SIX SEVENNNN")
                     hand_signal["flap"] = True
 
@@ -118,7 +133,7 @@ def sixSevenHands():
         else:
             annotated = rgb
 
-        cv2.imshow("Hands (Up-Down Detection)", cv2.cvtColor(annotated, cv2.COLOR_RGB2BGR))
+        cv2.imshow("SIX SEVENNNN", cv2.cvtColor(annotated, cv2.COLOR_RGB2BGR))
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
