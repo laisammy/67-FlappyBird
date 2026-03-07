@@ -5,6 +5,7 @@ import numpy as np
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
+hand_signal = {"flap": False}
 
 HAND_CONNECTIONS = [
     (0,1),(1,2),(2,3),(3,4),
@@ -14,25 +15,6 @@ HAND_CONNECTIONS = [
     (13,17),(17,18),(18,19),(19,20),
     (0,17)
 ]
-
-def hand_center_y(hand):
-    return np.mean([lm.y for lm in hand])
-
-def detect_up_down_alternation(history):
-    # Remove "still" frames
-    seq = [m for m in history if m in ("up", "down")]
-
-    # Need at least 3 direction changes
-    if len(seq) < 3:
-        return False
-
-    # Look for up→down→up or down→up→down
-    for i in range(len(seq) - 2):
-        a, b, c = seq[i], seq[i+1], seq[i+2]
-        if a != b and b != c and a == c:
-            return True
-
-    return False
 
 def draw_landmarks(rgb, result):
     annotated = np.copy(rgb)
@@ -56,17 +38,12 @@ def draw_landmarks(rgb, result):
 
     return annotated
 
-
 def sixSevenHands():
+    prev_y1, prev_y2 = None, None
+
     base = python.BaseOptions(model_asset_path="assets/hand_landmarker.task")
 
     detection_result = {"data": None} # Use a dict to store the result so it can be modified inside the callback function
-
-    prev_y = None
-    movement_history = []
-
-    sixSevenBool = False
-    sixSevenCounter = 0
 
 
     def handle_result(result, output_image, timestamp): # Callback function to receive results from the hand landmarker
@@ -76,15 +53,17 @@ def sixSevenHands():
         base_options=base,
         running_mode=vision.RunningMode.LIVE_STREAM,
         num_hands=2,
-        min_hand_detection_confidence=0.5,
-        min_hand_presence_confidence=0.5,
-        min_tracking_confidence=0.5,
+        min_hand_detection_confidence=0.2,
+        min_hand_presence_confidence=0.2,
+        min_tracking_confidence=0.2,
         result_callback=handle_result
     )
 
     detector = vision.HandLandmarker.create_from_options(options) # Create a hand landmarker object
 
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
     timestamp = 0
 
     while True:
@@ -102,43 +81,37 @@ def sixSevenHands():
 
         result = detection_result["data"] # Get the latest detection result from the dict
 
-        if result and result.hand_landmarks:
-            hand = result.hand_landmarks[0]
+        left_wrist = None
+        right_wrist = None
 
-            cy = np.mean([lm.y for lm in hand]) # Calculate the average y-coordinate of the hand landmarks to determine vertical movement
+        if result and result.hand_landmarks: # If hand landmarks are detected, find the wrist positions
+            h, w, _ = frame.shape
 
-            movement = "still"
-            threshold = 0.015
+            for i, hand in enumerate(result.hand_landmarks):
+                handed = result.handedness[i][0].category_name
+                wx = int(hand[0].x * w)
+                wy = int(hand[0].y * h)
 
-            if prev_y is not None:
-                dy = cy - prev_y # Calculate the change in y-coordinate since the last frame
+                if handed == "Left":
+                    left_wrist = (wx, wy)
+                elif handed == "Right":
+                    right_wrist = (wx, wy)
 
-                if dy < -threshold: # Hand moved up
-                    movement = "up"
-                elif dy > threshold: # Hand moved down
-                    movement = "down"
+        if left_wrist and right_wrist: # If both wrists are detected, check for movement
+            (x1, y1) = left_wrist
+            (x2, y2) = right_wrist
 
-                movement_history.append(movement) # Add the detected movement to the history list
-                movement_history = movement_history[-20:] # Keep only the last 20 movements to limit memory usage
+            if prev_y1 is not None and prev_y2 is not None:
+                dy1 = y1 - prev_y1
+                dy2 = y2 - prev_y2
 
-                seq = [m for m in movement_history if m in ("up", "down")] # Detect alternating up-down pattern
+                if abs(dy1) > 40 or abs(dy2) > 40:
+                    print("SIX SEVENNNN")
+                    hand_signal["flap"] = True
 
-                if len(seq) >= 3:
-                    for i in range(len(seq) - 2):
-                        a, b, c = seq[i], seq[i+1], seq[i+2] # Check for up→down→up or down→up→down pattern in the recent movement history
-                        if a != b and b != c and a == c: 
-                            sixSevenCounter += 1
-                            print("67 detected! Count:", sixSevenCounter)
-                            sixSevenBool = True
-                            break
-                        else:
-                            sixSevenBool = False
-                            break
+            prev_y1, prev_y2 = y1, y2
 
-            prev_y = cy
 
-        else:
-            prev_y = None  # Reset when no hand detected
 
         if result:
             annotated = draw_landmarks(rgb, result)
@@ -155,5 +128,5 @@ def sixSevenHands():
     cv2.destroyAllWindows()
 
 
-if __name__ == "__main__":
+def start_hand_tracking():
     sixSevenHands()

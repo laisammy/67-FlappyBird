@@ -3,6 +3,11 @@ from pygame import mixer
 from pygame.locals import *
 import random
 
+import threading
+import sixSevenHands
+
+threading.Thread(target=sixSevenHands.start_hand_tracking, daemon=True).start()
+
 pygame.init()
 mixer.init()
 screenWidth = 864
@@ -43,8 +48,8 @@ groundScroll = 0
 scrollSpeed = 4
 gameStart = False
 gameOver = False
-pipeGap = 200
-pipeFreq = 1500 #1500ms == 1.5s
+pipeGap = 300
+pipeFreq = 1300 #1300ms == 1.3s
 lastPipe = pygame.time.get_ticks() - pipeFreq
 score = 0
 passPipe = False
@@ -70,7 +75,7 @@ class Bird(pygame.sprite.Sprite):
 
     def update(self):
         if gameStart == True:
-            self.vel += 0.5 # Bird gravity
+            self.vel += 0.7 # Bird gravity
             if self.vel > 8:
                 self.vel = 8 # Terminal velocity
             if self.rect.bottom < 768:
@@ -204,7 +209,7 @@ while run:
     if gameOver == False and gameStart == True:
         timeNow = pygame.time.get_ticks()
         if timeNow - lastPipe > pipeFreq: # Generate pipes
-            pipeHeight = random.randint(-125, 125) # Generate height of pipe
+            pipeHeight = random.randint(-30, 30) # Generate height of pipe
 
             bottomPipe = Pipe(screenWidth, int(screenHeight / 2) + pipeHeight, -1)
             topPipe = Pipe(screenWidth, int(screenHeight / 2) + pipeHeight, 1)
@@ -249,6 +254,23 @@ while run:
             if event.key == pygame.K_SPACE:
                 flappy.clicked = False
 
+    debounce = 500
+    if sixSevenHands.hand_signal["flap"]:
+        sixSevenHands.hand_signal["flap"] = False
+
+        if gameOver == False:
+            if gameStart == False:
+                gameStart = True
+                flappy.clicked = True
+                flappy.vel = -12
+                wingWAV.play()
+                hitPlayed = False
+                print("Game Started")
+            else:
+                flappy.clicked = True
+                flappy.vel = -12
+                wingWAV.play()
+                print("Flap")
         
     pygame.display.update()
 
