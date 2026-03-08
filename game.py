@@ -6,6 +6,13 @@ import random
 import threading
 import sixSevenHands
 
+import sys, os
+
+def resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(relative_path)
+
 threading.Thread(target=sixSevenHands.start_hand_tracking, daemon=True).start()
 
 pygame.init()
@@ -17,30 +24,30 @@ screen = pygame.display.set_mode((screenWidth, screenHeight))
 pygame.display.set_caption("67-FlappyBird")
 
 # Load assets
-bg = pygame.image.load("assets/bg.png")
-ground = pygame.image.load("assets/ground.png")
-restart = pygame.image.load("assets/restart.png")
+bg = pygame.image.load(resource_path("assets/bg.png"))
+ground = pygame.image.load(resource_path("assets/ground.png"))
+restart = pygame.image.load(resource_path("assets/restart.png"))
 
-font_45 = pygame.font.Font("assets/PixelOperator8.ttf", 45)
-font_20 = pygame.font.Font("assets/PixelOperator8.ttf", 20)
+font_45 = pygame.font.Font(resource_path("assets/PixelOperator8.ttf"), 45)
+font_20 = pygame.font.Font(resource_path("assets/PixelOperator8.ttf"), 20)
 white = (255, 255, 255)
 black = (0, 0, 0)
 
-dieWAV = mixer.Sound("assets/die.wav")
+dieWAV = mixer.Sound(resource_path("assets/die.wav"))
 dieWAV.set_volume(0.5)
 diePlayed = False
 
-wingWAV = mixer.Sound("assets/wing.wav")
+wingWAV = mixer.Sound(resource_path("assets/wing.wav"))
 wingWAV.set_volume(0.5)
 
-hitWAV = mixer.Sound("assets/hit.wav")
+hitWAV = mixer.Sound(resource_path("assets/hit.wav"))
 hitWAV.set_volume(0.5)
 hitPlayed = False
 
-pointWAV = mixer.Sound("assets/point.wav")
+pointWAV = mixer.Sound(resource_path("assets/point.wav"))
 pointWAV.set_volume(0.5)
 
-swooshWAV = mixer.Sound("assets/swoosh.wav")
+swooshWAV = mixer.Sound(resource_path("assets/swoosh.wav"))
 swooshWAV.set_volume(0.5)
 
 # Game variables
@@ -68,7 +75,7 @@ class Bird(pygame.sprite.Sprite):
         self.index = 0
         self.counter = 0
         for num in range(1, 4): # Append sprite frames to images
-            img = pygame.image.load(f"assets/bird{num}.png")
+            img = pygame.image.load(resource_path(f"assets/bird{num}.png"))
             self.images.append(img)
         self.image = self.images[self.index]
         self.rect = self.image.get_rect()
@@ -102,7 +109,7 @@ class Bird(pygame.sprite.Sprite):
 class Pipe(pygame.sprite.Sprite):
     def __init__(self, x, y, position):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load("assets/pipe.png")
+        self.image = pygame.image.load(resource_path("assets/pipe.png"))
         self.rect = self.image.get_rect()
         self.rect.topleft = [x, y]
 

@@ -1,9 +1,19 @@
+import threading
+
 import cv2
 import mediapipe as mp
 import numpy as np
 
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
+
+import sys, os
+
+def resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(relative_path)
+
 
 hand_signal = {"flap": False}
 
@@ -43,7 +53,8 @@ def sixSevenHands():
     smooth_y1 = smooth_y2 = None
     movement_frames = 0
 
-    base = python.BaseOptions(model_asset_path="assets/hand_landmarker.task")
+    model_path = resource_path("assets/hand_landmarker.task")
+    base = python.BaseOptions(model_asset_path=model_path)
 
     detection_result = {"data": None} # Use a dict to store the result so it can be modified inside the callback function
 
@@ -144,4 +155,6 @@ def sixSevenHands():
 
 
 def start_hand_tracking():
+    if threading.main_thread().is_alive() is False:
+        return
     sixSevenHands()
