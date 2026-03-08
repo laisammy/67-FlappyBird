@@ -54,6 +54,9 @@ lastPipe = pygame.time.get_ticks() - pipeFreq
 score = 0
 passPipe = False
 
+cooldown_ms = 1000 # Cooldown (1s)
+cooldown_timer = cooldown_ms
+
 
 clock = pygame.time.Clock()
 fps = 60
@@ -173,6 +176,9 @@ run = True
 while run:
     clock.tick(fps) # Sets game to 60fps
 
+    dt = clock.get_time() # Get time since last frame in milliseconds
+    cooldown_timer += dt
+
     screen.blit(bg, (0,0)) # Draw background
 
     birdGroup.draw(screen)
@@ -204,7 +210,6 @@ while run:
         gameStart = False
         flappy.vel = 0
         flappy.rect.bottom = 768
-        print("Game Over")
 
     if gameOver == False and gameStart == True:
         timeNow = pygame.time.get_ticks()
@@ -224,7 +229,6 @@ while run:
             groundScroll = 0
 
     if gameOver == True:
-        print(hitPlayed)
         if hitPlayed == False:
             hitPlayed = True
             hitWAV.play()
@@ -254,7 +258,6 @@ while run:
             if event.key == pygame.K_SPACE:
                 flappy.clicked = False
 
-    debounce = 500
     if sixSevenHands.hand_signal["flap"]:
         sixSevenHands.hand_signal["flap"] = False
 
@@ -267,10 +270,11 @@ while run:
                 hitPlayed = False
                 print("Game Started")
             else:
-                flappy.clicked = True
-                flappy.vel = -12
-                wingWAV.play()
-                print("Flap")
+                if cooldown_timer >= cooldown_ms:
+                    flappy.clicked = True
+                    flappy.vel = -12
+                    wingWAV.play()
+                    print("Flap")
         
     pygame.display.update()
 
