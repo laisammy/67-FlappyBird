@@ -3,6 +3,11 @@ This is a modified version of flappy bird that can be controlled using the 67 ge
 
 In this version of flappy bird, players have the choice to use real-time hands tracking and perform the "67 movement" to flap the bird instead of using the space bar.
 
+# How to play the game
+1. Download the release here: https://github.com/laisammy/67-FlappyBird/releases/tag/v1.0
+2. Unzip dist.zip
+3. Run game.exe
+
 # Requirements
 - Python 3.13.7
 - Pygame
