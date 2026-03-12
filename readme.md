@@ -5,6 +5,9 @@ In this version of flappy bird, players have the choice to use real-time hands t
 
 It doesn't work the best with the hand detection, but the concept is there though.
 
+# How it works
+Mediapipe detects the location of your wrists and sends back info on how much it moved. Depending on the amount it moved from the previous location, it tells the bird to flap or not flap.
+
 # How to play the game
 1. Download the release here: https://github.com/laisammy/67-FlappyBird/releases/tag/v1.0 (It takes a while to download)
 2. Unzip dist.zip
